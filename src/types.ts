@@ -16,4 +16,4 @@ export type SyllabusEvent = {
   recurring?: { frequency: 'weekly'; daysOfWeek: string[]; until?: string }
 }
 
-export type Course = { name: string; code: string; instructor: string; term: string }
+export type Course = { id?: string; name: string; code: string; instructor: string; term: string }
