@@ -169,7 +169,7 @@ npm run lint   # Run ESLint
 
 ## Deploying to Vercel
 
-1. Push the repository to GitHub and import it into Vercel.
+1. Push the repository to GitHub and import it into Vercel. The included `vercel.json` selects the Vite build, deploys `dist`, and configures the Gemini API function.
 2. Add these Vercel environment variables for Production and Preview as needed:
 
    ```text
@@ -179,7 +179,7 @@ npm run lint   # Run ESLint
    GEMINI_MODEL=gemini-3.5-flash-lite
    ```
 
-3. Deploy. Vercel serves the React/Vite application and runs `api/extract.js` as a serverless endpoint.
+3. Deploy or redeploy after saving the variables. Vercel serves the React/Vite application and runs `api/extract.js` as a serverless endpoint.
 4. In Supabase **Authentication > URL Configuration**, add the deployed Vercel URL to the allowed redirect URLs.
 
 Never deploy `.env.local`, and never add `GEMINI_API_KEY` or a Supabase service-role key to variables beginning with `VITE_`.
