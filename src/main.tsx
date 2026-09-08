@@ -69,9 +69,12 @@ const emptyCourse: Course = {
 };
 
 function App() {
-  const [screen, setScreen] = useState<Screen>('landing'),
+  const [screen, setScreen] = useState<Screen>(() =>
+      window.location.pathname === '/home' ? 'workspace' : 'landing',
+    ),
     [view, setView] = useState<View>('review'),
-    [session, setSession] = useState<Session | null>(null);
+    [session, setSession] = useState<Session | null>(null),
+    [authReady, setAuthReady] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]),
     [active, setActive] = useState<Course>(demoCourse),
     [events, setEvents] = useState<SyllabusEvent[]>(cloneDemo);
@@ -99,11 +102,35 @@ function App() {
         : e.type === filter,
     );
   useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    if (!supabase) {
+      setAuthReady(true);
+      return;
+    }
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setSession(data.session))
+      .finally(() => setAuthReady(true));
     const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
     return () => data.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    if (!authReady) return;
+    const syncRoute = () => {
+      if (window.location.pathname !== '/home') {
+        setScreen('landing');
+        return;
+      }
+      if (session) {
+        setScreen('workspace');
+        return;
+      }
+      window.history.replaceState(null, '', '/');
+      setScreen('landing');
+    };
+    syncRoute();
+    window.addEventListener('popstate', syncRoute);
+    return () => window.removeEventListener('popstate', syncRoute);
+  }, [authReady, session]);
   useEffect(() => {
     if (!session) return;
     loadSchedule(session.user.id)
@@ -121,7 +148,19 @@ function App() {
     setScreen('processing');
     setTimeout(() => setScreen('workspace'), 750);
   };
+  const enterDashboard = () => {
+    window.history.pushState(null, '', '/home');
+    setScreen('workspace');
+  };
+  const enterLanding = () => {
+    window.history.pushState(null, '', '/');
+    setScreen('landing');
+  };
   const startNewSyllabus = () => {
+    if (!session) {
+      setAuth('signin');
+      return;
+    }
     setText('');
     setFile(null);
     setError('');
@@ -147,6 +186,11 @@ function App() {
     return false;
   };
   const extract = async () => {
+    if (!session) {
+      enterLanding();
+      setAuth('signin');
+      return;
+    }
     if (!file && !text.trim()) return setError('Add a file, paste syllabus text, or try the demo.');
     setError('');
     setProcessingMessage('Preparing your syllabus…');
@@ -155,15 +199,10 @@ function App() {
       const source = text.trim() || (await extractSyllabusText(file!, setProcessingMessage));
       setProcessingMessage('Using AI to identify dates, deadlines, and course details…');
       const result = await extractWithGemini(source);
-      if (session) {
-        const saved = await persistSchedule(result.course, result.events);
-        if (!saved) {
-          setScreen('upload');
-          return;
-        }
-      } else {
-        setActive(result.course);
-        setEvents(result.events);
+      const saved = await persistSchedule(result.course, result.events);
+      if (!saved) {
+        setScreen('upload');
+        return;
       }
       setScreen('workspace');
     } catch (reason) {
@@ -248,7 +287,7 @@ function App() {
           <div className="nav-actions">
             <button
               className="text-button"
-              onClick={() => (session ? setScreen('workspace') : setAuth('signin'))}
+              onClick={() => (session ? enterDashboard() : setAuth('signin'))}
             >
               <LogIn size={16} /> {session ? 'Open schedules' : 'Sign in'}
             </button>
@@ -285,7 +324,7 @@ function App() {
           <Auth
             mode={auth}
             close={() => setAuth(null)}
-            onSuccess={() => setScreen('workspace')}
+            onSuccess={enterDashboard}
             switchMode={() => setAuth(auth === 'signup' ? 'signin' : 'signup')}
           />
         )}
@@ -308,7 +347,7 @@ function App() {
       <main className="upload-page">
         <nav>
           <Brand />
-          <button className="text-button" onClick={() => setScreen('landing')}>
+          <button className="text-button" onClick={enterDashboard}>
             Back home
           </button>
         </nav>
@@ -375,7 +414,13 @@ function App() {
         </div>
         <div className="header-actions">
           {session ? (
-            <button className="text-button" onClick={() => supabase?.auth.signOut()}>
+            <button
+              className="text-button"
+              onClick={() => {
+                void supabase?.auth.signOut();
+                enterLanding();
+              }}
+            >
               <LogOut size={15} /> Sign out
             </button>
           ) : (

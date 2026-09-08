@@ -4,6 +4,12 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/home",
+      "destination": "/index.html"
+    }
+  ],
   "functions": {
     "api/extract.js": {
       "maxDuration": 60
