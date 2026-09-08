@@ -10,7 +10,7 @@ type CourseRow = { id: string; name: string; code: string; instructor: string; t
 type EventRow = { id: string; course_id: string; title: string; type: SyllabusEvent['type']; date: string; start_time: string | null; end_time: string | null; all_day: boolean; description: string | null; confidence: SyllabusEvent['confidence']; selected: boolean; recurring: SyllabusEvent['recurring'] | null }
 
 const toCourse = (row: CourseRow): Course => ({ id: row.id, name: row.name, code: row.code, instructor: row.instructor, term: row.term })
-const toEvent = (row: EventRow, courseCode: string): SyllabusEvent => ({ id: row.id, title: row.title, type: row.type, date: row.date, startTime: row.start_time || undefined, endTime: row.end_time || undefined, allDay: row.all_day, description: row.description || undefined, confidence: row.confidence, selected: row.selected, recurring: row.recurring || undefined, courseCode })
+const toEvent = (row: EventRow, courseCode: string): SyllabusEvent => ({ id: row.id, title: row.title, type: row.type, date: row.date, startTime: row.start_time || undefined, endTime: row.end_time || undefined, allDay: row.all_day, description: row.description || undefined, confidence: row.confidence, selected: row.selected, recurring: row.recurring || undefined, courseCode, courseId: row.course_id })
 
 export async function loadSchedule(userId: string) {
   if (!supabase) return { courses: [] as Course[], events: [] as SyllabusEvent[] }
@@ -45,5 +45,20 @@ export async function updateStoredEvent(courseId: string, event: SyllabusEvent) 
 export async function deleteStoredEvent(id: string) {
   if (!supabase) return
   const { error } = await supabase.from('syllabus_events').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function updateStoredCourse(course: Course) {
+  if (!supabase || !course.id) return
+  const { error } = await supabase
+    .from('courses')
+    .update({ name: course.name, code: course.code, instructor: course.instructor, term: course.term })
+    .eq('id', course.id)
+  if (error) throw error
+}
+
+export async function deleteStoredCourse(id: string) {
+  if (!supabase) return
+  const { error } = await supabase.from('courses').delete().eq('id', id)
   if (error) throw error
 }

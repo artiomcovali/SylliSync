@@ -11,6 +11,7 @@ export type SyllabusEvent = {
   allDay: boolean
   description?: string
   courseCode?: string
+  courseId?: string
   confidence: Confidence
   selected: boolean
   recurring?: { frequency: 'weekly'; daysOfWeek: string[]; until?: string }

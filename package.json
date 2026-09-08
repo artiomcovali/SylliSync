@@ -11,9 +11,13 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "@vitejs/plugin-react": "latest",
+    "heic2any": "^0.0.4",
     "lucide-react": "latest",
+    "mammoth": "^1.12.2",
+    "pdfjs-dist": "^6.3.289",
     "react": "latest",
     "react-dom": "latest",
+    "tesseract.js": "^7.0.0",
     "typescript": "latest",
     "vite": "latest"
   },
